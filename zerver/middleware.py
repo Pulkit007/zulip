@@ -351,7 +351,7 @@ class LogRequests(MiddlewareMixin):
             # Avoid re-initializing request_notes.log_data if it's already there.
             return
 
-        request_notes.client_name, request_notes.client_version = parse_client(request)
+        request.client_name, request.client_version = parse_client(request)
         request_notes.log_data = {}
         record_request_start_data(request_notes.log_data)
 
@@ -401,6 +401,10 @@ class LogRequests(MiddlewareMixin):
                 requestor_for_logs = request.user.format_requestor_for_logs()
             else:
                 requestor_for_logs = "unauth@{}".format(get_subdomain(request) or "root")
+        try:
+            client = request.client.name
+        except Exception:
+            client = request.client_name
 
         if response.streaming:
             content_iter = response.streaming_content
@@ -409,15 +413,15 @@ class LogRequests(MiddlewareMixin):
             content = response.content
             content_iter = None
 
-        assert request_notes.client_name is not None and request_notes.log_data is not None
+        assert request_notes.log_data is not None
         write_log_line(
             request_notes.log_data,
             request.path,
             request.method,
             remote_ip,
             requestor_for_logs,
-            request_notes.client_name,
-            client_version=request_notes.client_version,
+            client,
+            client_version=request.client_version,
             status_code=response.status_code,
             error_content=content,
             error_content_iter=content_iter,

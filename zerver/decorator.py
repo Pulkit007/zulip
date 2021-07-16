@@ -92,12 +92,11 @@ def update_user_activity(
     else:
         query = request.META["PATH_INFO"]
 
-    assert request_notes.client is not None
     event = {
         "query": query,
         "user_profile_id": user_profile.id,
         "time": datetime_to_timestamp(timezone_now()),
-        "client_id": request_notes.client.id,
+        "client_id": request.client.id,
     }
     queue_json_publish("user_activity", event, lambda event: None)
 
@@ -182,11 +181,8 @@ def process_client(
     skip_update_user_activity: bool = False,
     query: Optional[str] = None,
 ) -> None:
-    request_notes = get_request_notes(request)
     if client_name is None:
-        client_name = request_notes.client_name
-
-    assert client_name is not None
+        client_name = request.client_name
 
     # We could check for a browser's name being "Mozilla", but
     # e.g. Opera and MobileSafari don't set that, and it seems
@@ -196,7 +192,7 @@ def process_client(
         # the Zulip desktop apps be themselves.
         client_name = "website"
 
-    request_notes.client = get_client(client_name)
+    request.client = get_client(client_name)
     if not skip_update_user_activity and user_profile.is_authenticated:
         update_user_activity(request, user_profile, query)
 
@@ -788,8 +784,7 @@ def client_is_exempt_from_rate_limiting(request: HttpRequest) -> bool:
 
     # Don't rate limit requests from Django that come from our own servers,
     # and don't rate-limit dev instances
-    client = get_request_notes(request).client
-    return (client is not None and client.name.lower() == "internal") and (
+    return (request.client and request.client.name.lower() == "internal") and (
         is_local_addr(request.META["REMOTE_ADDR"]) or settings.DEBUG_RATE_LIMITING
     )
 

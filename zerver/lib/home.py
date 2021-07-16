@@ -16,7 +16,6 @@ from zerver.lib.i18n import (
     get_language_list,
     get_language_translation_data,
 )
-from zerver.lib.request import get_request_notes
 from zerver.models import Message, Realm, Stream, UserProfile
 from zerver.views.message_flags import get_latest_update_message_flag_activity
 
@@ -139,11 +138,9 @@ def build_page_params_for_home_page_load(
     }
 
     if user_profile is not None:
-        client = get_request_notes(request).client
-        assert client is not None
         register_ret = do_events_register(
             user_profile,
-            client,
+            request.client,
             apply_markdown=True,
             client_gravatar=True,
             slim_presence=True,

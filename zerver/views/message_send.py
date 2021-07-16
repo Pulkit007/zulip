@@ -20,7 +20,6 @@ from zerver.lib.actions import (
 )
 from zerver.lib.exceptions import JsonableError
 from zerver.lib.message import render_markdown
-from zerver.lib.request import get_request_notes
 from zerver.lib.response import json_success
 from zerver.lib.timestamp import convert_to_UTC
 from zerver.lib.topic import REQ_topic
@@ -53,16 +52,13 @@ def create_mirrored_message_users(
         for email in recipients:
             referenced_users.add(email.lower())
 
-    client = get_request_notes(request).client
-    assert client is not None
-
-    if client.name == "zephyr_mirror":
+    if request.client.name == "zephyr_mirror":
         user_check = same_realm_zephyr_user
         fullname_function = compute_mit_user_fullname
-    elif client.name == "irc_mirror":
+    elif request.client.name == "irc_mirror":
         user_check = same_realm_irc_user
         fullname_function = compute_irc_user_fullname
-    elif client.name in ("jabber_mirror", "JabberMirror"):
+    elif request.client.name in ("jabber_mirror", "JabberMirror"):
         user_check = same_realm_jabber_user
         fullname_function = compute_jabber_user_fullname
     else:
@@ -225,8 +221,7 @@ def send_message_backend(
     # `yes` to accepting `true` like all of our normal booleans.
     forged = forged_str is not None and forged_str in ["yes", "true"]
 
-    client = get_request_notes(request).client
-    assert client is not None
+    client = request.client
     can_forge_sender = request.user.can_forge_sender
     if forged and not can_forge_sender:
         raise JsonableError(_("User not authorized for this query"))
@@ -329,9 +324,7 @@ def render_message_backend(
     message = Message()
     message.sender = user_profile
     message.content = content
-    client = get_request_notes(request).client
-    assert client is not None
-    message.sending_client = client
+    message.sending_client = request.client
 
     rendering_result = render_markdown(message, content, realm=user_profile.realm)
     return json_success({"rendered": rendering_result.rendered_content})
