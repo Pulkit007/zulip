@@ -49,10 +49,8 @@ from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator, validate_email
 from django.utils.translation import gettext as _
 
-from zerver.lib.exceptions import JsonableError
+from zerver.lib.request import JsonableError, ResultT
 from zerver.lib.types import ProfileFieldData, Validator
-
-ResultT = TypeVar("ResultT")
 
 
 def check_string(var_name: str, val: object) -> str:
