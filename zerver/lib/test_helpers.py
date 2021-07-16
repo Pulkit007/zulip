@@ -29,7 +29,6 @@ import ldap
 import orjson
 from boto3.resources.base import ServiceResource
 from django.conf import settings
-from django.contrib.auth.models import AnonymousUser
 from django.db.migrations.state import StateApps
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.http.request import QueryDict
@@ -59,7 +58,6 @@ from zerver.models import (
 )
 from zerver.tornado.handlers import AsyncDjangoHandler, allocate_handler_id
 from zerver.worker import queue_processors
-from zilencer.models import RemoteZulipServer
 from zproject.backends import ExternalAuthDataDict, ExternalAuthResult
 
 if TYPE_CHECKING:
@@ -291,11 +289,10 @@ class HostRequestMock(HttpRequest):
     def __init__(
         self,
         post_data: Dict[str, Any] = {},
-        user_profile: Optional[Union[UserProfile, AnonymousUser, RemoteZulipServer]] = None,
+        user_profile: Optional[UserProfile] = None,
         host: str = settings.EXTERNAL_HOST,
         client_name: Optional[str] = None,
         meta_data: Optional[Dict[str, Any]] = None,
-        tornado_handler: Optional[AsyncDjangoHandler] = DummyHandler(),
     ) -> None:
         self.host = host
         self.GET = QueryDict(mutable=True)
@@ -326,7 +323,7 @@ class HostRequestMock(HttpRequest):
 
         request_notes_map[self] = ZulipRequestNotes(
             log_data={},
-            tornado_handler=tornado_handler,
+            tornado_handler=DummyHandler(),
         )
 
     @property
