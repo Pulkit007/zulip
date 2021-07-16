@@ -49,7 +49,6 @@ from zerver.lib.request import (
     RequestConfusingParmsError,
     RequestVariableConversionError,
     RequestVariableMissingError,
-    get_request_notes,
     has_request_variables,
 )
 from zerver.lib.response import json_response, json_success
@@ -1522,27 +1521,27 @@ class TestInternalNotifyView(ZulipTestCase):
 
     def test_valid_internal_requests(self) -> None:
         secret = "random"
-        request: HttpRequest = self.Request(
+        req: HttpRequest = self.Request(
             POST=dict(secret=secret),
             META=dict(REMOTE_ADDR="127.0.0.1"),
         )
 
         with self.settings(SHARED_SECRET=secret):
-            self.assertTrue(authenticate_notify(request))
-            self.assertEqual(self.internal_notify(False, request), self.BORING_RESULT)
-            self.assertEqual(get_request_notes(request).requestor_for_logs, "internal")
+            self.assertTrue(authenticate_notify(req))
+            self.assertEqual(self.internal_notify(False, req), self.BORING_RESULT)
+            self.assertEqual(req._requestor_for_logs, "internal")
 
             with self.assertRaises(RuntimeError):
-                self.internal_notify(True, request)
+                self.internal_notify(True, req)
 
-        request._tornado_handler = "set"
+        req._tornado_handler = "set"
         with self.settings(SHARED_SECRET=secret):
-            self.assertTrue(authenticate_notify(request))
-            self.assertEqual(self.internal_notify(True, request), self.BORING_RESULT)
-            self.assertEqual(get_request_notes(request).requestor_for_logs, "internal")
+            self.assertTrue(authenticate_notify(req))
+            self.assertEqual(self.internal_notify(True, req), self.BORING_RESULT)
+            self.assertEqual(req._requestor_for_logs, "internal")
 
             with self.assertRaises(RuntimeError):
-                self.internal_notify(False, request)
+                self.internal_notify(False, req)
 
     def test_internal_requests_with_broken_secret(self) -> None:
         secret = "random"
