@@ -30,8 +30,7 @@ import orjson
 from boto3.resources.base import ServiceResource
 from django.conf import settings
 from django.db.migrations.state import StateApps
-from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
-from django.http.request import QueryDict
+from django.http import HttpResponse, HttpResponseRedirect
 from django.test import override_settings
 from django.urls import URLResolver
 from moto import mock_s3
@@ -281,7 +280,7 @@ class DummyHandler(AsyncDjangoHandler):
         allocate_handler_id(self)
 
 
-class HostRequestMock(HttpRequest):
+class HostRequestMock:
     """A mock request object where get_host() works.  Useful for testing
     routes that use Zulip's subdomains feature"""
 
@@ -291,10 +290,9 @@ class HostRequestMock(HttpRequest):
         user_profile: Optional[UserProfile] = None,
         host: str = settings.EXTERNAL_HOST,
         client_name: Optional[str] = None,
-        meta_data: Optional[Dict[str, Any]] = None,
     ) -> None:
         self.host = host
-        self.GET = QueryDict(mutable=True)
+        self.GET: Dict[str, Any] = {}
         self.method = ""
         if client_name is not None:
             self.client = get_client(client_name)
@@ -303,30 +301,19 @@ class HostRequestMock(HttpRequest):
         # though of course the HTTP API would do so.  Ideally, we'd
         # get rid of this abstraction entirely and just use the HTTP
         # API directly, but while it exists, we need this code
-        self.POST = QueryDict(mutable=True)
+        self.POST: Dict[str, Any] = {}
         for key in post_data:
             self.POST[key] = str(post_data[key])
             self.method = "POST"
 
         self._tornado_handler = DummyHandler()
         self._log_data: Dict[str, Any] = {}
-        if meta_data is None:
-            self.META = {"PATH_INFO": "test"}
-        else:
-            self.META = meta_data
+        self.META = {"PATH_INFO": "test"}
         self.path = ""
         self.user = user_profile
-        self._body = b""
+        self.body = ""
         self.content_type = ""
         self.client_name = ""
-
-    @property
-    def body(self) -> bytes:
-        return super().body
-
-    @body.setter
-    def body(self, val: bytes) -> None:
-        self._body = val
 
     def get_host(self) -> str:
         return self.host
