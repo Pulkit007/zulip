@@ -9,7 +9,6 @@ from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
 from sentry_sdk.utils import capture_internal_exceptions
 
 from version import ZULIP_VERSION
-from zerver.lib.request import get_request_notes
 
 if TYPE_CHECKING:
     from sentry_sdk._types import Event, Hint
@@ -48,11 +47,10 @@ def add_context(event: "Event", hint: "Hint") -> Optional["Event"]:
 
         request = get_current_request()
         if request:
-            request_notes = get_request_notes(request)
             if hasattr(request, "client"):
                 event["tags"]["client"] = request.client.name
-            if request_notes.realm is not None:
-                event["tags"].setdefault("realm", request_notes.realm.string_id)
+            if hasattr(request, "realm"):
+                event["tags"].setdefault("realm", request.realm.string_id)
     return event
 
 

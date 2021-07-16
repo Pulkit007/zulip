@@ -6,7 +6,6 @@ from django.template import loader
 
 from zerver.lib.avatar import get_gravatar_url
 from zerver.lib.exceptions import JsonableError
-from zerver.lib.request import get_request_notes
 from zerver.lib.response import json_success
 from zerver.lib.streams import access_web_public_stream
 from zerver.lib.timestamp import datetime_to_timestamp
@@ -30,9 +29,7 @@ def archive(request: HttpRequest, stream_id: int, topic_name: str) -> HttpRespon
         )
 
     try:
-        realm = get_request_notes(request).realm
-        assert realm is not None
-        stream = access_web_public_stream(stream_id, realm)
+        stream = access_web_public_stream(stream_id, request.realm)
     except JsonableError:
         return get_response([], False, "")
 
@@ -78,9 +75,7 @@ def archive(request: HttpRequest, stream_id: int, topic_name: str) -> HttpRespon
 
 def get_web_public_topics_backend(request: HttpRequest, stream_id: int) -> HttpResponse:
     try:
-        realm = get_request_notes(request).realm
-        assert realm is not None
-        stream = access_web_public_stream(stream_id, realm)
+        stream = access_web_public_stream(stream_id, request.realm)
     except JsonableError:
         return json_success(dict(topics=[]))
 
